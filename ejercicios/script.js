@@ -207,6 +207,8 @@ const calculateDamage = (attacker, attacked) => {
 
 
 
+////////////// ==== FALTA TERMINAR ===== ///////////////////
+
 // battle()
 // Crear un función battle que tome como argumentos dos pokémons. La función debe simular una batalla y devolver el resultado de la misma. Las reglas de la misma son:
 // Por ronda, cada pokémon ataca al contrario
