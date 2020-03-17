@@ -7,6 +7,13 @@ const getMoves = pokemon => {
     return moves
 }
 
+// getRandomMove()
+// Crear una función que devuelva un movimiento aleatorio de una lista de movimientos
+const getRandomMove = movesAttacker => {
+    const randomMove = movesAttacker[Math.ceil(Math.random() * ((movesAttacker.length) - 1))];
+    return randomMove;
+}
+
 // getPrimaryAbility()
 // Crear una función getPrimaryAbility que tome como argumento un pokémon y devuelva la habilidad primaria
 
@@ -166,22 +173,19 @@ const getAttackModifier = (attacker, attacked) => {
 // Si el pokémon es débil contra el tipo de su atacante, se debe agregar It's super effective!, si es resistente, se debe agregar It's not very effective!, por ejemplo:
 
 // "Pikachu used Thunderbold! Squirtle lost 24 HP! It's super effective!"
-const getAttackLog = (attacker, attacked, move, damage, modifier) => {
+const getAttackLog = (attacker, attacked, damage, move, modifier) => {
 
 
     let attackLog = `${attacker} used ${move}! ${attacked} lost ${damage} HP!`
 
-    if (modifier === "weak") {
-
+    if (modifier === 2) {
         attacked += " It's super effective!"
-
-    } else if (modifier === "resistant") {
-
+    } else if (modifier === 0.5) {
         attacked += " It's not very effective!"
-
     }
 
     return attackLog
+
 }
 
 
@@ -192,12 +196,7 @@ const getAttackLog = (attacker, attacked, move, damage, modifier) => {
 // modifier el modificador del daño según el tipo del atacante y del atacado y devuelva el daño ocasionado. El daño se calcula con la siguiente fórmula:
 // 0.5 * attack * (attack / defense) * modifier
 
-const calculateDamage = (attacker, attacked) => {
-    const { stats: { attack } } = attacker;
-
-    const { stats: { deffense } } = attacked;
-
-    const modifier = getAttackModifier(attacker, attacked)
+const calculateDamage = ({ stats: { attack } }, { stats: { deffense } }, modifier) => {
 
     const damage = Math.round(0.5 * attack * (attack / deffense) * modifier);
 
@@ -236,6 +235,49 @@ const calculateDamage = (attacker, attacked) => {
 //     ]
 // }
 
+const getCharmander = () => ({
+    name: 'Charmander',
+    type: 'fire',
+    ability: {
+        primary: 'Blaze',
+        hidden: 'Solar Power'
+    },
+    stats: {
+        hp: 39,
+        attack: 52,
+        deffense: 43,
+        speed: 65
+    },
+    moves: ['Growl', 'Scratch', 'Flamethrower', 'Dragon Breath'],
+    modifiers: {
+        weakness: ['water', 'ground', 'rock'],
+        resistances: ['fire', 'ice', 'grass', 'steal']
+    }
+})
+
+const getSquirtle = () => ({
+    name: 'Squirtle',
+    type: 'water',
+    ability: {
+        primary: 'Torrent',
+        hidden: 'Rain Dish'
+    },
+    stats: {
+        hp: 44,
+        attack: 48,
+        deffense: 50,
+        speed: 43
+    },
+    moves: ['Tackle', 'Tail Whip', 'Water Gun', 'Hydro Pump'],
+    modifiers: {
+        weakness: ['electric', 'grass'],
+        resistances: ['water', 'fire', 'ice', 'steel']
+    }
+})
+
+const squirtle = getSquirtle();
+const charmander = getCharmander();
+
 
 const battle = (pokemon1, pokemon2) => {
     let gameLog = {
@@ -253,31 +295,54 @@ const battle = (pokemon1, pokemon2) => {
         history: [
         ]
     }
+    let { stats: { speed: pokemon1speed } } = pokemon1;
+    let { stats: { speed: pokemon2speed } } = pokemon2;
 
     // Por ronda, cada pokémon ataca al contrario
     // Comienza atacando el pokémon con más velocidad (speed)
-    let attacker = pokemon1.stats.speed > pokemon2.stats.speed ? { ...pokemon1 } : { ...pokemon2 };
-    let attacked = pokemon1.stats.speed > pokemon2.stats.speed ? { ...pokemon2 } : { ...pokemon1 }
-    let { stats: { hp: pokemon1HP } } = pokemon1;
+    let attacker = pokemon1speed > pokemon2speed ? { ...pokemon1 } : { ...pokemon2 };
+    let attacked = pokemon1speed > pokemon2speed ? { ...pokemon2 } : { ...pokemon1 }
 
-    let { stats: { hp: pokemon1HP } } = pokemon1;
+    let gameContinues = true;
 
-    while (pokemon1.stats.hp > 0 && pokemon2.stats.hp > 0) { // La batalla termina cuando la vida (hp, hit points, puntos de golpe) de un pokémon llega a 0 o menos
-
-
+    while (gameContinues) { // La batalla termina cuando la vida (hp, hit points, puntos de golpe) de un pokémon llega a 0 o menos
 
         // El movimiento se elige de forma aleatoria en cada ataque
-        const movsAttacker = getMoves(attacker)
-        const randomMove = movsAttacker[Math.ceil(Math.random() * ((movsAttacker.length) - 1))]
+        const movesAttacker = getMoves(attacker);
+        const randomMove = getRandomMove(movesAttacker);
 
         // El daño se obtiene con la función calculateDamage y se resta a la vida del pokémon atacado
-        const damage = calculateDamage(attacker, attacked);
+        const modifier = getAttackModifier(attacker, attacked);
+        const damage = calculateDamage(attacker, attacked, modifier);
+
+        attacked.stats.hp -= damage;
+
+
         // Se tiene que guardar un registro o historial del ataque en cada turno, usando lo que devuelve la función getAttackLog
+        gameLog.history.push(getAttackLog(attacker.name, attacked.name, damage, randomMove, modifier));
 
-        gameLog.push(getAttackLog(attacker.name, attacked.name, move, damage, modifier)
+        if (attacked.stats.hp <= 0) {
+            gameContinues = false;
+            gameLog.results =
+            {
+                winner: {
+                    name: attacker.name,
+                    hp: attacker.stats.hp, // vida restante
+                },
+                losser: {
+                    name: attacked.name,
+                    hp: attacked.stats.hp,
+                }
+            };
+        }
 
+        const temporalPlayer = { ...attacker };
+        attacker = { ...attacked };
+        attacked = { ...temporalPlayer };
+
+        gameLog.rounds++;
     }
 
-}
+    console.log(gameLog)
 
 }
